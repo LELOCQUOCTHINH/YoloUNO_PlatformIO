@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 
+#include "global.h"
 
 
 #define NEO_PIN 45

@@ -8,9 +8,13 @@ String CORE_IOT_TOKEN;
 String CORE_IOT_SERVER;
 String CORE_IOT_PORT;
 
-String ssid = "ESP32-YOUR NETWORK HERE!!!";
-String password = "12345678";
+String ssid = "YoloUno of LLQT";
+String password = "thinhbodoi";
 String wifi_ssid = "abcde";
 String wifi_password = "123456789";
 boolean isWifiConnected = false;
 SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+
+bool led1_state = false;
+bool led2_state = false;
+bool isAPMode = true;

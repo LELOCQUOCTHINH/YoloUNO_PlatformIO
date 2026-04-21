@@ -2,10 +2,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
-bool led1_state = false;
-bool led2_state = false;
-bool isAPMode = true;
-
 WebServer server(80);
 
 unsigned long connect_start_ms = 0;
@@ -336,7 +332,6 @@ void startAP()
 {
   WiFi.disconnect(true);
   WiFi.softAPdisconnect(true);
-  vTaskDelay(1000); // Cho chip một khoảng thời gian nhỏ để xử lý
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid.c_str(), password.c_str());

@@ -1,8 +1,8 @@
 #include "coreiot.h"
 
 // ----------- CONFIGURE THESE! -----------
-const char* coreIOT_Server = "10.235.76.226";  
-const char* coreIOT_Token = "g7drm1amhd3dchr379xu";   // Device Access Token
+const char* coreIOT_Server = "app.coreiot.io";  
+const char* coreIOT_Token = "mzlqygty8iu5kazvvvaz";   // Device Access Token
 const int   mqttPort = 1883;
 // ----------------------------------------
 
@@ -14,12 +14,8 @@ void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    // Attempt to connect (username=token, password=empty)
-    //if (client.connect("ESP32Client", coreIOT_Token, NULL)) {
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
 
-    if (client.connect(clientId.c_str())) {
+    if (client.connect("ESP32Client", coreIOT_Token, NULL)) {
         
       Serial.println("connected to CoreIOT Server!");
       client.subscribe("v1/devices/me/rpc/request/+");
@@ -40,6 +36,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(topic);
   Serial.println("] ");
 
+  String topicStr = String(topic);
+  String requestId = "";
+  if (topicStr.startsWith("v1/devices/me/rpc/request/")) {
+      requestId = topicStr.substring(26); // Cắt bỏ 26 ký tự đầu để lấy phần ID
+  }
+  
   // Allocate a temporary buffer for the message
   char message[length + 1];
   memcpy(message, payload, length);
@@ -58,20 +60,40 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 
   const char* method = doc["method"];
-  if (strcmp(method, "setStateLED") == 0) {
+
+  if (strcmp(method, "getValue") == 0) {
+      Serial.println("Server requested current state.");
+      
+      // Chuẩn bị topic phản hồi
+      String responseTopic = "v1/devices/me/rpc/response/" + requestId;
+      
+      String responsePayload = led1_state ? "true" : "false"; 
+      
+      client.publish(responseTopic.c_str(), responsePayload.c_str());
+      Serial.println("Sent getValue response: " + responsePayload);
+  }
+
+  else if (strcmp(method, "setStateLED") == 0) {
     // Check params type (could be boolean, int, or string according to your RPC)
     // Example: {"method": "setValueLED", "params": "ON"}
-    const char* params = doc["params"];
+    bool params = doc["params"].as<bool>();
+    bool isSuccess = false;
 
-    if (strcmp(params, "ON") == 0) {
-      Serial.println("Device turned ON.");
-      //TODO
-
+    if (params == true) {
+        Serial.println("Device turned ON.");
+        led1_state = true;
+        // digitalWrite(LED1_PIN, HIGH);
+        isSuccess = true;
     } else {   
-      Serial.println("Device turned OFF.");
-      //TODO
-
+        Serial.println("Device turned OFF.");
+        led1_state = false;
+        // digitalWrite(LED1_PIN, LOW);
+        isSuccess = true;
     }
+
+    // Bắt buộc phải phản hồi lại để Server ngừng xoay vòng loading trên nút nhấn
+    String responseTopic = "v1/devices/me/rpc/response/" + requestId;
+    client.publish(responseTopic.c_str(), isSuccess ? "true" : "false");
   } else {
     Serial.print("Unknown method: ");
     Serial.println(method);
@@ -101,7 +123,7 @@ void setup_coreiot(){
 
   Serial.println(" Connected!");
 
-  client.setServer(CORE_IOT_SERVER.c_str(), CORE_IOT_PORT.toInt());
+  client.setServer(coreIOT_Server, mqttPort);
   client.setCallback(callback);
 
 }

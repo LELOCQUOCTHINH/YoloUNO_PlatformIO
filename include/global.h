@@ -15,11 +15,15 @@ extern String CORE_IOT_TOKEN;
 extern String CORE_IOT_SERVER;
 extern String CORE_IOT_PORT;
 
-extern String ssid;
-extern String password;
-extern String wifi_ssid;
-extern String wifi_password;
+extern String ssid; //AP mode SSID
+extern String password; //AP mode password
+extern String wifi_ssid; //STA mode SSID
+extern String wifi_password; //STA mode password
 
 extern boolean isWifiConnected;
 extern SemaphoreHandle_t xBinarySemaphoreInternet;
+
+extern bool led1_state;
+extern bool led2_state;
+extern bool isAPMode;
 #endif
