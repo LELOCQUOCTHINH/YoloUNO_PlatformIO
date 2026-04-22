@@ -132,6 +132,8 @@ void coreiot_task(void *pvParameters){
 
     setup_coreiot();
 
+    unsigned long lastMsg = 0;
+
     while(1){
 
         if (!client.connected()) {
@@ -140,13 +142,15 @@ void coreiot_task(void *pvParameters){
         client.loop();
 
         // Sample payload, publish to 'v1/devices/me/telemetry'
-        String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
-        
-        client.publish("v1/devices/me/telemetry", payload.c_str());
+        unsigned long now = millis();
+        if (now - lastMsg >= 10000) {
+            lastMsg = now;
+            
+            String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
+            client.publish("v1/devices/me/telemetry", payload.c_str());
+            Serial.println("Published payload: " + payload);
+        }
 
-
-        
-        Serial.println("Published payload: " + payload);
-        vTaskDelay(10000);  // Publish every 10 seconds
+        vTaskDelay(pdMS_TO_TICKS(20));  // Publish every 10 seconds
     }
 }
