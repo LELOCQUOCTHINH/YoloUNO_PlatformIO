@@ -1,6 +1,7 @@
 #include "coreiot.h"
 
 // ----------- CONFIGURE THESE! -----------
+const char* local_Server   = "10.190.240.59";
 const char* coreIOT_Server = "app.coreiot.io";  
 const char* coreIOT_Token = "mzlqygty8iu5kazvvvaz";   // Device Access Token
 const int   mqttPort = 1883;
@@ -13,20 +14,39 @@ PubSubClient client(espClient);
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    // 1. Attempt to connect to LOCAL SERVER first
+    Serial.print("Attempting MQTT connection to Local Server (");
+    Serial.print(local_Server);
+    Serial.print(")... ");
+    
+    client.setServer(local_Server, mqttPort); // Trỏ mục tiêu về Local
 
-    if (client.connect("ESP32Client", coreIOT_Token, NULL)) {
-        
-      Serial.println("connected to CoreIOT Server!");
+    if (client.connect("ESP32Client", coreIOT_Token, "")) {
+      Serial.println("CONNECTED to Local Server!");
       client.subscribe("v1/devices/me/rpc/request/+");
       Serial.println("Subscribed to v1/devices/me/rpc/request/+");
+      return; // Connected successfully, exit the reconnect function
+    } 
+    
+    // 2. If LOCAL SERVER connection fails, attempt to connect to COREIOT SERVER
+    Serial.print("Failed (rc=");
+    Serial.print(client.state());
+    Serial.println("). Falling back to CoreIOT Server...");
+    
+    client.setServer(coreIOT_Server, mqttPort); // Trỏ mục tiêu về Cloud
 
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
+    if (client.connect("ESP32Client", coreIOT_Token, "")) {
+      Serial.println("CONNECTED to CoreIOT Server!");
+      client.subscribe("v1/devices/me/rpc/request/+");
+      Serial.println("Subscribed to v1/devices/me/rpc/request/+");
+      return; // Connected successfully, exit the reconnect function
+    } 
+    
+    // 3. If both connections fail
+    Serial.print("CoreIOT failed too (rc=");
+    Serial.print(client.state());
+    Serial.println("). Try again in 5 seconds...");
+    delay(5000);
   }
 }
 
@@ -124,7 +144,6 @@ void setup_coreiot(){
 
   Serial.println(" Connected!");
 
-  client.setServer(coreIOT_Server, mqttPort);
   client.setCallback(callback);
 
 }
