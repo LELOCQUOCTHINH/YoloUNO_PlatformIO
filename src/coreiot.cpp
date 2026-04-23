@@ -61,16 +61,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   const char* method = doc["method"];
 
-  if (strcmp(method, "getValue") == 0) {
+  if (strcmp(method, "getStateLED") == 0) {
       Serial.println("Server requested current state.");
       
       // Chuẩn bị topic phản hồi
       String responseTopic = "v1/devices/me/rpc/response/" + requestId;
       
-      String responsePayload = led1_state ? "true" : "false"; 
+      String jsonValue = led1_state ? "true" : "false";
+      String responsePayload = "{\"getStateLED\":" + jsonValue + "}";
       
       client.publish(responseTopic.c_str(), responsePayload.c_str());
-      Serial.println("Sent getValue response: " + responsePayload);
+      Serial.println("Sent getStateLED response: " + responsePayload);
   }
 
   else if (strcmp(method, "setStateLED") == 0) {
